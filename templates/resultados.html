@@ -1,0 +1,69 @@
+<div class="mt-4">
+    <h5 class="h6 mb-3 fw-semibold text-muted">
+        <i class="bi bi-list-check me-2"></i>Resultados
+    </h5>
+    {% for nav in ['chrome', 'edge', 'firefox', 'opera'] %}
+        {% set info = resumen.get(nav, {}) %}
+        
+        <div class="card border-0 border-bottom mb-3 rounded-0">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        {% if nav == 'chrome' %}
+                            <i class="bi bi-browser-chrome fs-3 me-3 text-primary" style="opacity: 0.8;"></i>
+                            <div>
+                                <h6 class="mb-1 fw-semibold">Chrome</h6>
+                        {% elif nav == 'edge' %}
+                            <i class="bi bi-microsoft fs-3 me-3 text-info" style="opacity: 0.8;"></i>
+                            <div>
+                                <h6 class="mb-1 fw-semibold">Microsoft Edge</h6>
+                        {% elif nav == 'firefox' %}
+                            <i class="bi bi-firefox fs-3 me-3 text-warning" style="opacity: 0.8;"></i>
+                            <div>
+                                <h6 class="mb-1 fw-semibold">Firefox</h6>
+                        {% elif nav == 'opera' %}
+                            <i class="bi bi-browser-safari fs-3 me-3 text-danger" style="opacity: 0.8;"></i>
+                            <div>
+                                <h6 class="mb-1 fw-semibold">Opera</h6>
+                        {% else %}
+                            <i class="bi bi-browser fs-3 me-3 text-secondary" style="opacity: 0.8;"></i>
+                            <div>
+                                <h6 class="mb-1 fw-semibold">{{ nav }}</h6>
+                        {% endif %}
+                            <small class="text-muted">
+                                {{ 'Navegador encontrado' if info.encontrado else 'Navegador no encontrado' }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        {% if info.encontrado %}
+                            {% if info.insertados > 0 %}
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">{{ info.insertados }} procesados</span>
+                            {% else %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">0 procesados</span>
+                            {% endif %}
+                            <br>
+                            <small class="text-muted mt-1 d-block">{{ info.total_leidos }} leídos</small>
+                            {% if info.get('error') %}
+                                <small class="text-danger d-block mt-1">{{ info.error }}</small>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">No disponible</span>
+                        {% endif %}
+
+                        {% if info.encontrado %}
+                        <button class="btn btn-dark btn-sm mt-2" 
+                                hx-get="/api/historial/modal?navegador={{ nav }}&limite=100"
+                                hx-target="#modalesContainer"
+                                hx-swap="innerHTML">
+                            <i class="bi bi-eye me-2"></i>
+                            Ver Historial
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+

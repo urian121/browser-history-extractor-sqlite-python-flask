@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request
 import leer_historial
 import database
+import traceback
 
 # Crear la aplicación
 app = Flask(__name__)
@@ -21,39 +22,50 @@ def leer_historial_endpoint():
         # Leer historial de todos los navegadores
         resultados = leer_historial.leer_todos_navegadores()
         
-        # Guardar en base de datos
-        total_insertados = 0
+        # Guardar en base de datos y mantener orden consistente
+        orden_navegadores = ['chrome', 'edge', 'firefox', 'opera']
         resumen = {}
         
-        for nav, info in resultados.items():
-            if info["encontrado"] and info["datos"]:
-                insertados = database.save_historial(nav, info["datos"])
-                total_insertados += insertados
-                resumen[nav] = {
-                    "encontrado": True,
-                    "total_leidos": info["cantidad"],
-                    "insertados": insertados
-                }
+        for nav in orden_navegadores:
+            info = resultados.get(nav, {})
+            datos = info.get("datos", [])
+            encontrado = info.get("encontrado", False)
+            
+            if encontrado and datos and len(datos) > 0:
+                try:
+                    procesados = database.save_historial(nav, datos)
+                    resumen[nav] = {
+                        "encontrado": True,
+                        "total_leidos": info.get("cantidad", len(datos)),
+                        "insertados": procesados
+                    }
+                except Exception as e:
+                    print(f"Error guardando historial de {nav}: {e}")
+                    traceback.print_exc()
+                    resumen[nav] = {
+                        "encontrado": True,
+                        "total_leidos": info.get("cantidad", len(datos)),
+                        "insertados": 0,
+                        "error": str(e)
+                    }
             else:
                 resumen[nav] = {
-                    "encontrado": info.get("encontrado", False),
-                    "total_leidos": 0,
+                    "encontrado": encontrado,
+                    "total_leidos": info.get("cantidad", 0),
                     "insertados": 0
                 }
+                if "error" in info:
+                    resumen[nav]["error"] = info["error"]
         
-        return jsonify({
-            "success": True,
-            "mensaje": f"Historial leído y guardado. Total insertados: {total_insertados}",
-            "resumen": resumen,
-            "total_insertados": total_insertados
-        })
+        # Devolver HTML para HTMX
+        return render_template('resultados.html', resumen=resumen)
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "mensaje": f"Error al leer historial: {str(e)}"
-        }), 500
+        import traceback
+        traceback.print_exc()
+        return f'<div class="alert alert-danger">Error al leer historial: {str(e)}</div>', 500
 
 
+# Endpoint para obtener estadísticas del historial almacenado
 @app.route('/api/estadisticas', methods=['GET'])
 def estadisticas():
     """Endpoint para obtener estadísticas del historial almacenado"""
@@ -70,9 +82,10 @@ def estadisticas():
         }), 500
 
 
+# Endpoint para obtener el historial almacenado (JSON)
 @app.route('/api/historial', methods=['GET'])
 def obtener_historial():
-    """Endpoint para obtener el historial almacenado"""
+    """Endpoint para obtener el historial almacenado en formato JSON"""
     try:
         navegador = request.args.get('navegador', None)
         limite = request.args.get('limite', 100, type=int)
@@ -88,6 +101,23 @@ def obtener_historial():
             "success": False,
             "mensaje": f"Error al obtener historial: {str(e)}"
         }), 500
+
+
+# Endpoint para obtener el historial en formato HTML (modal)
+@app.route('/api/historial/modal', methods=['GET'])
+def obtener_historial_modal():
+    """Endpoint para obtener el historial almacenado en formato HTML para modal"""
+    try:
+        navegador = request.args.get('navegador', None)
+        limite = request.args.get('limite', 100, type=int)
+        
+        if not navegador:
+            return '<div class="alert alert-danger">Navegador no especificado</div>', 400
+        
+        historial = database.get_historial(navegador=navegador, limite=limite)
+        return render_template('modal_historial.html', navegador=navegador, historial=historial)
+    except Exception as e:
+        return f'<div class="alert alert-danger">Error al obtener historial: {str(e)}</div>', 500
 
 
 # Correr la aplicación

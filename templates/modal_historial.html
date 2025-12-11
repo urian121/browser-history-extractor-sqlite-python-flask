@@ -1,0 +1,99 @@
+<div class="modal fade" id="modalHistorial{{ navegador }}" tabindex="-1" aria-labelledby="modalHistorialLabel{{ navegador }}" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalHistorialLabel{{ navegador }}">
+                    {% if navegador == 'chrome' %}
+                        <i class="bi bi-browser-chrome text-primary me-2"></i>Historial de Chrome
+                    {% elif navegador == 'edge' %}
+                        <i class="bi bi-microsoft text-info me-2"></i>Historial de Microsoft Edge
+                    {% elif navegador == 'firefox' %}
+                        <i class="bi bi-firefox text-warning me-2"></i>Historial de Firefox
+                    {% elif navegador == 'opera' %}
+                        <i class="bi bi-browser-safari text-danger me-2"></i>Historial de Opera
+                    {% else %}
+                        <i class="bi bi-browser text-secondary me-2"></i>Historial de {{ navegador }}
+                    {% endif %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if historial %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th scope="col" style="width: 20%;">Fecha</th>
+                                    <th scope="col" style="width: 50%;">Título</th>
+                                    <th scope="col" style="width: 30%;">URL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in historial %}
+                                <tr>
+                                    <td class="text-muted small">{{ item.fecha }}</td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 400px;" title="{{ item.titulo or 'Sin título' }}">
+                                            {{ item.titulo or 'Sin título' }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="{{ item.url }}" target="_blank" class="text-decoration-none text-truncate d-inline-block" style="max-width: 300px;" title="{{ item.url }}">
+                                            {{ item.url }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3 text-muted small">
+                        Mostrando {{ historial|length }} registro(s)
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No hay historial disponible para este navegador.
+                    </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // Esperar a que el DOM esté listo y HTMX haya insertado el contenido
+    setTimeout(function() {
+        const modalId = 'modalHistorial{{ navegador }}';
+        const modalElement = document.getElementById(modalId);
+        
+        if (modalElement) {
+            // Eliminar cualquier instancia previa del modal
+            const existingModal = bootstrap.Modal.getInstance(modalElement);
+            if (existingModal) {
+                existingModal.dispose();
+            }
+            
+            // Crear nueva instancia del modal
+            const modal = new bootstrap.Modal(modalElement, {
+                backdrop: true,
+                keyboard: true
+            });
+            
+            // Mostrar el modal
+            modal.show();
+            
+            // Limpiar el modal del DOM cuando se cierre
+            modalElement.addEventListener('hidden.bs.modal', function () {
+                modal.dispose();
+                const container = document.getElementById('modalesContainer');
+                if (container) {
+                    container.innerHTML = '';
+                }
+            });
+        }
+    }, 100);
+</script>
+
