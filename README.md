@@ -55,7 +55,6 @@ python app.py
 
 ## Notas
 
-- Los navegadores deben estar cerrados para poder leer el historial
 - El historial se filtra a los últimos 30 días
 - Los registros duplicados se actualizan automáticamente
 
